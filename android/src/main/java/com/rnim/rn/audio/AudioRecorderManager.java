@@ -22,7 +22,10 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import android.content.Intent;
+import android.content.ComponentName;
 import android.content.pm.PackageManager;
+import android.os.Bundle;
 import android.os.Build;
 import android.os.Environment;
 import android.media.MediaRecorder;
@@ -35,10 +38,14 @@ import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import java.io.FileInputStream;
 
+import java.lang.Math;
 import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.IllegalAccessException;
 import java.lang.NoSuchMethodException;
+
+import static com.rnim.rn.audio.Constants.ERROR_INVALID_CONFIG;
+import static com.rnim.rn.audio.Constants.NOTIFICATION_CONFIG;
 
 class AudioRecorderManager extends ReactContextBaseJavaModule {
 
@@ -106,6 +113,15 @@ class AudioRecorderManager extends ReactContextBaseJavaModule {
             Manifest.permission.RECORD_AUDIO);
     boolean permissionGranted = permissionCheck == PackageManager.PERMISSION_GRANTED;
     promise.resolve(permissionGranted);
+  }
+
+  @ReactMethod
+  public void createNotificationChannel(ReadableMap channelConfig, Promise promise) {
+    if (channelConfig == null) {
+      logAndRejectPromise(promise, ERROR_INVALID_CONFIG, "ForegroundService: Channel config is invalid");
+      return;
+    }
+    NotificationHelper.getInstance(getReactApplicationContext()).createNotificationChannel(channelConfig, promise);
   }
 
   @ReactMethod
@@ -221,6 +237,7 @@ class AudioRecorderManager extends ReactContextBaseJavaModule {
       recorder.stop();
       recorder.release();
       stopWatch.stop();
+      stopService();
     }
     catch (final RuntimeException e) {
       // https://developer.android.com/reference/android/media/MediaRecorder.html#stop()
@@ -314,8 +331,11 @@ class AudioRecorderManager extends ReactContextBaseJavaModule {
       public void run() {
         if (!isPaused) {
           WritableMap body = Arguments.createMap();
-          body.putDouble("currentTime", stopWatch.getTimeSeconds());
+          float currentTime = stopWatch.getTimeSeconds();
+          body.putDouble("currentTime", currentTime);
           sendEvent("recordingProgress", body);
+
+          startService("회의중", "회의 시간 - " + secondsToString(Math.round(currentTime)));
         }
       }
     }, 0, 1000);
@@ -339,4 +359,39 @@ class AudioRecorderManager extends ReactContextBaseJavaModule {
     Log.e(TAG, errorMessage);
     promise.reject(errorCode, errorMessage);
   }
+
+  private String secondsToString(int secs) {
+    return String.format("%02d:%02d:%02d", secs / 3600, (secs % 3600) / 60, secs % 60);
+  }  
+
+  private void startService(String title, String text) {
+    Bundle notificationConfig = new Bundle();
+
+    notificationConfig.putDouble("id", 345);
+    notificationConfig.putString("title", title);
+    notificationConfig.putString("text", text);
+    notificationConfig.putString("icon", "ic_launcher");
+    notificationConfig.putInt("priority", 0);
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      notificationConfig.putString("channelId", "ForegroundServiceChannel");
+    }
+
+    Intent intent = new Intent(getReactApplicationContext(), ForegroundService.class);
+    intent.setAction(Constants.ACTION_FOREGROUND_SERVICE_START);
+    intent.putExtra(NOTIFICATION_CONFIG, notificationConfig);
+    ComponentName componentName = getReactApplicationContext().startService(intent);
+    if (componentName == null) {
+        Log.e(TAG, "ForegroundService: Foreground service is not started");
+    }
+  }
+
+  private void stopService() {
+      Intent intent = new Intent(getReactApplicationContext(), ForegroundService.class);
+      intent.setAction(Constants.ACTION_FOREGROUND_SERVICE_STOP);
+      boolean stopped = getReactApplicationContext().stopService(intent);
+      if (!stopped) {
+            Log.e(TAG, "ForegroundService: Foreground service failed to stop");         
+      } 
+  }
+
 }
