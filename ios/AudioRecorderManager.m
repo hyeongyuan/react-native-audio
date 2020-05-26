@@ -15,6 +15,7 @@
 
 NSString *const AudioRecorderEventProgress = @"recordingProgress";
 NSString *const AudioRecorderEventFinished = @"recordingFinished";
+NSString *const AudioRecorderEventStatus = @"recordingStatus";
 
 @implementation AudioRecorderManager {
 
@@ -62,6 +63,13 @@ RCT_EXPORT_MODULE();
 
     _prevProgressUpdateTime = [NSDate date];
   }
+}
+
+- (void)sendRecordingStatus {
+  // TODO: Add and send recording pause status
+  [self.bridge.eventDispatcher sendAppEventWithName:AudioRecorderEventStatus body:@{
+      @"isRecording":[NSNumber numberWithBool:_audioRecorder.isRecording]
+  }];
 }
 
 - (void)stopProgressTimer {
@@ -247,6 +255,7 @@ RCT_EXPORT_METHOD(startRecording)
   [self startProgressTimer];
   [_recordSession setActive:YES error:nil];
   [_audioRecorder record];
+  [self sendRecordingStatus];
 }
 
 RCT_EXPORT_METHOD(stopRecording)
@@ -254,6 +263,7 @@ RCT_EXPORT_METHOD(stopRecording)
   [_audioRecorder stop];
   [_recordSession setCategory:AVAudioSessionCategoryPlayback error:nil];
   _prevProgressUpdateTime = nil;
+  [self sendRecordingStatus];
 }
 
 RCT_EXPORT_METHOD(pauseRecording)

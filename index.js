@@ -28,6 +28,13 @@ var AudioRecorder = {
       }
     });
 
+    if (this.statusSubscription) this.statusSubscription.remove();
+    this.statusSubscription = NativeAppEventEmitter.addListener('recordingStatus', (data) => {
+      if (this.onStatus) {
+        this.onStatus(data);
+      }
+    });
+
     var defaultOptions = {
       SampleRate: 44100.0,
       Channels: 2,
@@ -87,6 +94,7 @@ var AudioRecorder = {
   removeListeners: function () {
     if (this.progressSubscription) this.progressSubscription.remove();
     if (this.finishedSubscription) this.finishedSubscription.remove();
+    if (this.statusSubscription) this.statusSubscription.remove();
   },
   ////////////////////////////////////////////////////////////////////////////////////////////////
   // ForegroundService for android

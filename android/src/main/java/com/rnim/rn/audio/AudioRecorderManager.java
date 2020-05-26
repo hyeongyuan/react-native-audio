@@ -228,6 +228,7 @@ class AudioRecorderManager extends ReactContextBaseJavaModule {
     isRecording = true;
     isPaused = false;
     startTimer();
+    broadcastRecordStatus();
     promise.resolve(currentOutputFile);
   }
 
@@ -256,7 +257,7 @@ class AudioRecorderManager extends ReactContextBaseJavaModule {
     finally {
       recorder = null;
     }
-
+    broadcastRecordStatus();
     promise.resolve(currentOutputFile);
 
     WritableMap result = Arguments.createMap();
@@ -308,6 +309,7 @@ class AudioRecorderManager extends ReactContextBaseJavaModule {
     }
 
     isPaused = true;
+    broadcastRecordStatus();
     promise.resolve(null);
   }
 
@@ -330,6 +332,7 @@ class AudioRecorderManager extends ReactContextBaseJavaModule {
     }
     
     isPaused = false;
+    broadcastRecordStatus();
     promise.resolve(null);
   }
 
@@ -401,6 +404,14 @@ class AudioRecorderManager extends ReactContextBaseJavaModule {
       if (!stopped) {
             Log.e(TAG, "ForegroundService: Foreground service failed to stop");         
       } 
+  }
+
+  private void broadcastRecordStatus() {
+    WritableMap status = Arguments.createMap();
+    status.putBoolean("isRecording", isRecording);
+    status.putBoolean("isPaused", isPaused);
+
+    sendEvent("recordingStatus", status);
   }
 
 }
