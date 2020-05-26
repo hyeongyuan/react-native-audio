@@ -235,6 +235,13 @@ RCT_EXPORT_METHOD(prepareRecordingAtPath:(NSString *)path sampleRate:(float)samp
   }
 }
 
+RCT_EXPORT_METHOD(getRecordStatus:(RCTPromiseResolveBlock)resolve reject:(__unused RCTPromiseRejectBlock)reject)
+{
+  // TODO: Get recording pause status 
+  NSDictionary *recordStatus = @{@"isRecording": _audioRecorder.isRecording}
+  resolve(recordStatus);
+}
+
 RCT_EXPORT_METHOD(startRecording)
 {
   [self startProgressTimer];

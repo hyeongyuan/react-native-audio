@@ -203,6 +203,15 @@ class AudioRecorderManager extends ReactContextBaseJavaModule {
   }
 
   @ReactMethod
+  public void getRecordStatus(Promise promise) {
+    WritableMap status = Arguments.createMap();
+    status.putBoolean("isRecording", isRecording);
+    status.putBoolean("isPaused", isPaused);
+
+    promise.resolve(status);
+  }
+
+  @ReactMethod
   public void startRecording(Promise promise){
     if (recorder == null){
       logAndRejectPromise(promise, "RECORDING_NOT_PREPARED", "Please call prepareRecordingAtPath before starting recording");

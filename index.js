@@ -58,6 +58,9 @@ var AudioRecorder = {
       return AudioRecorderManager.prepareRecordingAtPath(path, recordingOptions);
     }
   },
+  getRecordStatus: function () {
+    return AudioRecorderManager.getRecordStatus();
+  },
   startRecording: function () {
     return AudioRecorderManager.startRecording();
   },
