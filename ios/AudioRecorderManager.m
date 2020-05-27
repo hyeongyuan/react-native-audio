@@ -34,6 +34,8 @@ NSString *const AudioRecorderEventStatus = @"recordingStatus";
   BOOL _meteringEnabled;
   BOOL _measurementMode;
   BOOL _includeBase64;
+
+  NSMutableArray *_timestamps;
 }
 
 @synthesize bridge = _bridge;
@@ -72,6 +74,13 @@ RCT_EXPORT_MODULE();
   }];
 }
 
+- (void)saveTimestamp {
+  NSTimeInterval timeStamp = [[NSDate date] timeIntervalSince1970];
+  // NSTimeInterval is defined as double
+  NSNumber *timeStampObj = [NSNumber numberWithDouble: timeStamp];
+  [_timestamps addObject: timeStampObj];
+}
+
 - (void)stopProgressTimer {
   [_progressUpdateTimer invalidate];
 }
@@ -100,7 +109,8 @@ RCT_EXPORT_MODULE();
       @"duration":@(_currentTime),
       @"status": flag ? @"OK" : @"ERROR",
       @"audioFileURL": [_audioFileURL absoluteString],
-      @"audioFileSize": @(audioFileSize)
+      @"audioFileSize": @(audioFileSize),
+      @"timestamps": [NSArray arrayWithArray:_timestamps]
     }];
     
     // This will resume the music/audio file that was playing before the recording started
@@ -216,6 +226,8 @@ RCT_EXPORT_METHOD(prepareRecordingAtPath:(NSString *)path sampleRate:(float)samp
     _includeBase64 = includeBase64;
   }
 
+  _timestamps = [[NSMutableArray alloc] init];
+
   NSError *error = nil;
 
   _recordSession = [AVAudioSession sharedInstance];
@@ -255,12 +267,14 @@ RCT_EXPORT_METHOD(startRecording)
   [self startProgressTimer];
   [_recordSession setActive:YES error:nil];
   [_audioRecorder record];
+  [self saveTimestamp];
   [self sendRecordingStatus];
 }
 
 RCT_EXPORT_METHOD(stopRecording)
 {
   [_audioRecorder stop];
+  [self saveTimestamp];
   [_recordSession setCategory:AVAudioSessionCategoryPlayback error:nil];
   _prevProgressUpdateTime = nil;
   [self sendRecordingStatus];
