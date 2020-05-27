@@ -11,6 +11,7 @@ import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.WritableArray;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -21,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.ArrayList;
 
 import android.content.Intent;
 import android.content.ComponentName;
@@ -43,6 +45,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.IllegalAccessException;
 import java.lang.NoSuchMethodException;
+import java.lang.Long;
+import java.lang.System;
 
 import static com.rnim.rn.audio.Constants.ERROR_INVALID_CONFIG;
 import static com.rnim.rn.audio.Constants.NOTIFICATION_CONFIG;
@@ -67,6 +71,7 @@ class AudioRecorderManager extends ReactContextBaseJavaModule {
   private boolean includeBase64 = false;
   private Timer timer;
   private StopWatch stopWatch;
+  private ArrayList<Long> timestamps;
   
   private boolean isPauseResumeCapable = false;
   private Method pauseMethod = null;
@@ -134,6 +139,7 @@ class AudioRecorderManager extends ReactContextBaseJavaModule {
       destFile.getParentFile().mkdirs();
     }
     recorder = new MediaRecorder();
+    timestamps = new ArrayList<Long>();
     try {
       recorder.setAudioSource(recordingSettings.getInt("AudioSource"));
       int outputFormat = getOutputFormatFromString(recordingSettings.getString("OutputFormat"));
@@ -222,7 +228,7 @@ class AudioRecorderManager extends ReactContextBaseJavaModule {
       return;
     }
     recorder.start();
-
+    saveTimestamp();
     stopWatch.reset();
     stopWatch.start();
     isRecording = true;
@@ -245,6 +251,7 @@ class AudioRecorderManager extends ReactContextBaseJavaModule {
 
     try {
       recorder.stop();
+      saveTimestamp();
       recorder.release();
       stopWatch.stop();
       stopService();
@@ -287,6 +294,9 @@ class AudioRecorderManager extends ReactContextBaseJavaModule {
     }
     result.putString("base64", base64);
 
+    WritableArray nativeArray = Arguments.fromList(timestamps);
+    result.putArray("timestamps", nativeArray);
+    
     sendEvent("recordingFinished", result);
   }
 
@@ -412,6 +422,12 @@ class AudioRecorderManager extends ReactContextBaseJavaModule {
     status.putBoolean("isPaused", isPaused);
 
     sendEvent("recordingStatus", status);
+  }
+
+  private void saveTimestamp() {
+    Long timestamp = System.currentTimeMillis();
+
+    timestamps.add(timestamp);
   }
 
 }
