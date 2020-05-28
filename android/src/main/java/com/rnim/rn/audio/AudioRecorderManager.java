@@ -31,6 +31,7 @@ import android.os.Bundle;
 import android.os.Build;
 import android.os.Environment;
 import android.media.MediaRecorder;
+import android.media.MediaMetadataRetriever;
 import android.media.AudioManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -270,6 +271,7 @@ class AudioRecorderManager extends ReactContextBaseJavaModule {
     WritableMap result = Arguments.createMap();
     result.putString("status", "OK");
     result.putString("audioFileURL", "file://" + currentOutputFile);
+    result.putDouble("duration", getDuration(currentOutputFile));
 
     String base64 = "";
     if (includeBase64) {
@@ -425,9 +427,19 @@ class AudioRecorderManager extends ReactContextBaseJavaModule {
   }
 
   private void saveTimestamp() {
-    Long timestamp = System.currentTimeMillis();
+    long timestamp = System.currentTimeMillis();
 
     timestamps.add(timestamp);
+  }
+
+  private double getDuration(String mediaPath) {
+    MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+    mmr.setDataSource(mediaPath);
+    String time = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+    mmr.release();
+
+    long timeInmillisec = Long.parseLong(time);
+    return (double)timeInmillisec / 1000;
   }
 
 }
