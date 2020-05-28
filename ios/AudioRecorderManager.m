@@ -20,6 +20,8 @@ NSString *const AudioRecorderEventStatus = @"recordingStatus";
 @implementation AudioRecorderManager {
 
   AVAudioRecorder *_audioRecorder;
+  AVAudioPlayer *_audioPlayer;
+  NSTimeInterval _duration;
 
   NSTimeInterval _currentTime;
   id _progressUpdateTimer;
@@ -103,10 +105,20 @@ RCT_EXPORT_MODULE();
   }
     uint64_t audioFileSize = 0;
     audioFileSize = [[[NSFileManager defaultManager] attributesOfItemAtPath:[_audioFileURL path] error:nil] fileSize];
+
+    NSError *playerError;
+    _audioPlayer = [[AVAudioPlayer alloc] initWithContentsOfURL:_audioFileURL error:&playerError];
+
+    if (playerError) {
+      _duration = 0;
+      NSLog(@"error: %@", [playerError localizedDescription]);
+    } else {
+      _duration = _audioPlayer.duration;
+    }
   
   [self.bridge.eventDispatcher sendAppEventWithName:AudioRecorderEventFinished body:@{
       @"base64":base64,
-      @"duration":@(_currentTime),
+      @"duration":@(_duration),
       @"status": flag ? @"OK" : @"ERROR",
       @"audioFileURL": [_audioFileURL absoluteString],
       @"audioFileSize": @(audioFileSize),
