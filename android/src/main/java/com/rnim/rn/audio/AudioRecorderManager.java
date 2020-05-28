@@ -228,8 +228,8 @@ class AudioRecorderManager extends ReactContextBaseJavaModule {
       logAndRejectPromise(promise, "INVALID_STATE", "Please call stopRecording before starting recording");
       return;
     }
-    recorder.start();
     saveTimestamp();
+    recorder.start();
     stopWatch.reset();
     stopWatch.start();
     isRecording = true;
@@ -251,8 +251,8 @@ class AudioRecorderManager extends ReactContextBaseJavaModule {
     isPaused = false;
 
     try {
-      recorder.stop();
       saveTimestamp();
+      recorder.stop();
       recorder.release();
       stopWatch.stop();
       stopService();
