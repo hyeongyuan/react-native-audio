@@ -79,8 +79,8 @@ RCT_EXPORT_MODULE();
 - (void)saveTimestamp {
   NSTimeInterval timeStamp = [[NSDate date] timeIntervalSince1970];
   // NSTimeInterval is defined as double
-  NSNumber *timeStampObj = [NSNumber numberWithDouble: timeStamp];
-  [_timestamps addObject: timeStampObj];
+  NSInteger time = timeStamp * 1000;
+  [_timestamps addObject: [NSNumber numberWithInteger: time]];
 }
 
 - (void)stopProgressTimer {
