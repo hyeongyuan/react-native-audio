@@ -1,7 +1,7 @@
 package com.rnim.rn.audio;
 
 import android.Manifest;
-import android.content.Context;
+
 
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
@@ -27,12 +27,16 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.ArrayList;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ComponentName;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Build;
 import android.os.Environment;
+import android.os.BatteryManager;
 import android.media.MediaRecorder;
 import android.media.MediaMetadataRetriever;
 import android.media.AudioManager;
@@ -80,6 +84,8 @@ class AudioRecorderManager extends ReactContextBaseJavaModule implements Lifecyc
   private boolean isPauseResumeCapable = false;
   private Method pauseMethod = null;
   private Method resumeMethod = null;
+
+  BroadcastReceiver receiver;
 
 
   public AudioRecorderManager(ReactApplicationContext reactContext) {
@@ -481,4 +487,38 @@ class AudioRecorderManager extends ReactContextBaseJavaModule implements Lifecyc
     return (double)timeInmillisec / 1000;
   }
 
+  private void registerBatteryListener() {
+    IntentFilter intentFilter = new IntentFilter();
+    intentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
+    if (this.receiver == null) {
+      this.receiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+          updateBatteryState(intent);
+        }
+      };
+      getReactApplicationContext().registerReceiver(this.receiver, intentFilter);
+    }
+  }
+
+  private void unregisterBatteryListener() {
+    if (this.receiver != null) {
+      try {
+        getReactApplicationContext().unregisterReceiver(this.receiver);
+        this.receiver = null;
+      } catch (Exception e) {
+        Log.e(TAG, "Error unregistering battery receiver: " + e.getMessage(), e);
+      }
+    }
+  }
+
+  private void updateBatteryState(Intent batteryIntent) {
+    int level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+    int status = batteryIntent.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
+    boolean isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
+                         status == BatteryManager.BATTERY_STATUS_FULL;
+
+    Log.d(TAG, "Battery level: " + level);
+    Log.d(TAG, "Batter is charging: " + isCharging);
+  }
 }
