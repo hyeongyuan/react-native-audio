@@ -156,6 +156,7 @@ class AudioRecorderManager extends ReactContextBaseJavaModule implements Lifecyc
     } finally {
       recorder = null;
     }
+    unregisterBatteryListener();
   }
 
   @ReactMethod
@@ -282,6 +283,7 @@ class AudioRecorderManager extends ReactContextBaseJavaModule implements Lifecyc
     startTimer();
     broadcastRecordStatus();
     promise.resolve(currentOutputFile);
+    registerBatteryListener();
   }
 
   @ReactMethod
@@ -345,6 +347,7 @@ class AudioRecorderManager extends ReactContextBaseJavaModule implements Lifecyc
     result.putArray("timestamps", nativeArray);
     
     sendEvent("recordingFinished", result);
+    unregisterBatteryListener();
   }
 
   @ReactMethod
