@@ -152,7 +152,7 @@ class AudioRecorderManager extends ReactContextBaseJavaModule implements Lifecyc
       stopService();
     } catch (final RuntimeException e) {
       // https://developer.android.com/reference/android/media/MediaRecorder.html#stop()
-      logAndRejectPromise(promise, "RUNTIME_EXCEPTION", "No valid audio data received. You may be using a device that can't record audio.");
+      Log.e("RUNTIME_EXCEPTION", "No valid audio data received. You may be using a device that can't record audio.");
     } finally {
       recorder = null;
     }
