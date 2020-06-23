@@ -6,12 +6,15 @@ import android.content.Context;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
+import com.facebook.react.bridge.LifecycleEventListener;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.WritableArray;
+
+import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -37,7 +40,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Base64;
 import android.util.Log;
-import com.facebook.react.modules.core.DeviceEventManagerModule;
+
 
 import java.io.FileInputStream;
 
@@ -52,7 +55,7 @@ import java.lang.System;
 import static com.rnim.rn.audio.Constants.ERROR_INVALID_CONFIG;
 import static com.rnim.rn.audio.Constants.NOTIFICATION_CONFIG;
 
-class AudioRecorderManager extends ReactContextBaseJavaModule {
+class AudioRecorderManager extends ReactContextBaseJavaModule implements LifecycleEventListener {
 
   private static final String TAG = "ReactNativeAudio";
 
@@ -81,6 +84,7 @@ class AudioRecorderManager extends ReactContextBaseJavaModule {
 
   public AudioRecorderManager(ReactApplicationContext reactContext) {
     super(reactContext);
+    reactContext.addLifecycleEventListener(this);
     this.context = reactContext;
     stopWatch = new StopWatch();
     
@@ -111,6 +115,41 @@ class AudioRecorderManager extends ReactContextBaseJavaModule {
   @Override
   public String getName() {
     return "AudioRecorderManager";
+  }
+
+  @Override
+  public void onHostResume() {
+    // Log.d(TAG, "onHostResume");
+  }
+
+  @Override
+  public void onHostPause() {
+    // Log.d(TAG, "onHostPause");
+  }
+
+  @Override
+  public void onHostDestroy() {
+    // Log.d(TAG, "onHostDestroy");
+    if (!isRecording || recorder == null){
+      return;
+    }
+
+    stopTimer();
+    isRecording = false;
+    isPaused = false;
+
+    try {
+      saveTimestamp();
+      recorder.stop();
+      recorder.release();
+      stopWatch.stop();
+      stopService();
+    } catch (final RuntimeException e) {
+      // https://developer.android.com/reference/android/media/MediaRecorder.html#stop()
+      logAndRejectPromise(promise, "RUNTIME_EXCEPTION", "No valid audio data received. You may be using a device that can't record audio.");
+    } finally {
+      recorder = null;
+    }
   }
 
   @ReactMethod
@@ -414,7 +453,7 @@ class AudioRecorderManager extends ReactContextBaseJavaModule {
       intent.setAction(Constants.ACTION_FOREGROUND_SERVICE_STOP);
       boolean stopped = getReactApplicationContext().stopService(intent);
       if (!stopped) {
-            Log.e(TAG, "ForegroundService: Foreground service failed to stop");         
+        Log.e(TAG, "ForegroundService: Foreground service failed to stop");         
       } 
   }
 
