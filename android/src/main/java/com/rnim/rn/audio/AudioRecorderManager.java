@@ -521,7 +521,69 @@ class AudioRecorderManager extends ReactContextBaseJavaModule implements Lifecyc
     boolean isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
                          status == BatteryManager.BATTERY_STATUS_FULL;
 
-    Log.d(TAG, "Battery level: " + level);
-    Log.d(TAG, "Batter is charging: " + isCharging);
+    if (level <= 5 && !isCharging) {
+      forceStopRecording();
+    }
+  }
+
+  private void forceStopRecording(){
+    if (!isRecording){
+      return;
+    }
+
+    stopTimer();
+    isRecording = false;
+    isPaused = false;
+
+    try {
+      saveTimestamp();
+      recorder.stop();
+      recorder.release();
+      stopWatch.stop();
+      stopService();
+    }
+    catch (final RuntimeException e) {
+      // https://developer.android.com/reference/android/media/MediaRecorder.html#stop()
+      Log.e("RUNTIME_EXCEPTION", "No valid audio data received. You may be using a device that can't record audio.");
+      return;
+    }
+    finally {
+      recorder = null;
+    }
+    broadcastRecordStatus();
+
+    WritableMap result = Arguments.createMap();
+    result.putString("status", "OK");
+    result.putString("audioFileURL", "file://" + currentOutputFile);
+    result.putDouble("duration", getDuration(currentOutputFile));
+
+    String base64 = "";
+    if (includeBase64) {
+      try {
+        InputStream inputStream = new FileInputStream(currentOutputFile);
+        byte[] bytes;
+        byte[] buffer = new byte[8192];
+        int bytesRead;
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        try {
+          while ((bytesRead = inputStream.read(buffer)) != -1) {
+            output.write(buffer, 0, bytesRead);
+          }
+        } catch (IOException e) {
+          Log.e(TAG, "FAILED TO PARSE FILE");
+        }
+        bytes = output.toByteArray();
+        base64 = Base64.encodeToString(bytes, Base64.DEFAULT);
+      } catch(FileNotFoundException e) {
+        Log.e(TAG, "FAILED TO FIND FILE");
+      }
+    }
+    result.putString("base64", base64);
+
+    WritableArray nativeArray = Arguments.fromList(timestamps);
+    result.putArray("timestamps", nativeArray);
+    
+    sendEvent("recordingFinished", result);
+    unregisterBatteryListener();
   }
 }
