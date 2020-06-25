@@ -4,32 +4,33 @@ import React from 'react';
 
 import ReactNative, {
   NativeModules,
-  NativeAppEventEmitter,
-  DeviceEventEmitter,
+  NativeEventEmitter,
   PermissionsAndroid,
   Platform,
 } from 'react-native';
 
 var AudioRecorderManager = NativeModules.AudioRecorderManager;
 
+var audioRecorderEmitter = new NativeEventEmitter(AudioRecorderManager);
+
 var AudioRecorder = {
   prepareRecordingAtPath: function (path, options) {
     if (this.progressSubscription) this.progressSubscription.remove();
-    this.progressSubscription = NativeAppEventEmitter.addListener('recordingProgress', (data) => {
+    this.progressSubscription = audioRecorderEmitter.addListener('recordingProgress', (data) => {
       if (this.onProgress) {
         this.onProgress(data);
       }
     });
 
     if (this.finishedSubscription) this.finishedSubscription.remove();
-    this.finishedSubscription = NativeAppEventEmitter.addListener('recordingFinished', (data) => {
+    this.finishedSubscription = audioRecorderEmitter.addListener('recordingFinished', (data) => {
       if (this.onFinished) {
         this.onFinished(data);
       }
     });
 
     if (this.statusSubscription) this.statusSubscription.remove();
-    this.statusSubscription = NativeAppEventEmitter.addListener('recordingStatus', (data) => {
+    this.statusSubscription = audioRecorderEmitter.addListener('recordingStatus', (data) => {
       if (this.onStatus) {
         this.onStatus(data);
       }
