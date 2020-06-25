@@ -93,9 +93,18 @@ var AudioRecorder = {
       });
   },
   removeListeners: function () {
-    if (this.progressSubscription) this.progressSubscription.remove();
-    if (this.finishedSubscription) this.finishedSubscription.remove();
-    if (this.statusSubscription) this.statusSubscription.remove();
+    if (this.progressSubscription) {
+      this.progressSubscription.remove();
+      this.progressSubscription = null;
+    }
+    if (this.finishedSubscription) {
+      this.finishedSubscription.remove();
+      this.finishedSubscription = null;
+    }
+    if (this.statusSubscription) {
+      this.statusSubscription.remove();
+      this.statusSubscription = null;
+    }
   },
   ////////////////////////////////////////////////////////////////////////////////////////////////
   // ForegroundService for android
