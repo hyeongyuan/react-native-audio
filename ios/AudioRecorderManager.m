@@ -155,7 +155,7 @@ RCT_EXPORT_MODULE();
       NSDictionary *info = notification.userInfo;
       AVAudioSessionInterruptionType type = [info[AVAudioSessionInterruptionTypeKey] unsignedIntegerValue];
 
-      switch (tyoe) {
+      switch (type) {
         case AVAudioSessionInterruptionTypeBegan:
           NSLog(@"Begin interruption");
           [self forceStopRecording];
