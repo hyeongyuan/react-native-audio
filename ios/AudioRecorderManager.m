@@ -151,6 +151,21 @@ RCT_EXPORT_MODULE();
   return basePath;
 }
 
+- (void)audioInterruptionHandler:(NSNotification *)notification {
+      NSDictionary *info = notification.userInfo;
+      AVAudioSessionInterruptionType type = [info[AVAudioSessionInterruptionTypeKey] unsignedIntegerValue];
+
+      switch (tyoe) {
+        case AVAudioSessionInterruptionTypeBegan:
+          NSLog(@"Begin interruption");
+          [self forceStopRecording];
+          break;
+        case AVAudioSessionInterruptionTypeEnded:
+          NSLog(@"End interruption");
+          break;
+      }
+}
+
 RCT_EXPORT_METHOD(prepareRecordingAtPath:(NSString *)path sampleRate:(float)sampleRate channels:(nonnull NSNumber *)channels quality:(NSString *)quality encoding:(NSString *)encoding meteringEnabled:(BOOL)meteringEnabled measurementMode:(BOOL)measurementMode includeBase64:(BOOL)includeBase64)
 {
   _prevProgressUpdateTime = nil;
@@ -250,6 +265,8 @@ RCT_EXPORT_METHOD(prepareRecordingAtPath:(NSString *)path sampleRate:(float)samp
   }else{
       [_recordSession setCategory:AVAudioSessionCategoryMultiRoute error:nil];
   }
+
+  [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(audioInterruptionHandler:) name:AVAudioSessionInterruptionNotification object:nil];
 
   _audioRecorder = [[AVAudioRecorder alloc]
                 initWithURL:_audioFileURL
@@ -351,6 +368,15 @@ RCT_EXPORT_METHOD(requestAuthorization:(RCTPromiseResolveBlock)resolve
     @"NSDocumentDirectoryPath": [self getPathForDirectory:NSDocumentDirectory],
     @"NSLibraryDirectoryPath": [self getPathForDirectory:NSLibraryDirectory]
   };
+}
+
+- (void)forceStopRecording
+{
+    [self saveTimestamp];
+    [_audioRecorder stop];
+    [_recordSession setCategory:AVAudioSessionCategoryPlayback error:nil];
+    _prevProgressUpdateTime = nil;
+    [self sendRecordingStatus];
 }
 
 @end
