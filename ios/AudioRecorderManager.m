@@ -46,14 +46,6 @@ NSString *const AudioRecorderEventStatus = @"recordingStatus";
 
 RCT_EXPORT_MODULE();
 
-- (NSArray<NSString *> *)supportedEvents {
-  return @[
-    AudioRecorderEventProgress,
-    AudioRecorderEventFinished,
-    AudioRecorderEventStatus
-  ];
-}
-
 - (void)sendProgressUpdate {
   if (_audioRecorder && _audioRecorder.isRecording) {
     _currentTime = _audioRecorder.currentTime;
@@ -131,8 +123,8 @@ RCT_EXPORT_MODULE();
       @"status": flag ? @"OK" : @"ERROR",
       @"audioFileURL": [_audioFileURL absoluteString],
       @"audioFileSize": @(audioFileSize),
-      @"timestamps": [NSArray arrayWithArray:_timestamps]
-      @"forcedStop": _isInterrupted
+      @"timestamps": [NSArray arrayWithArray:_timestamps],
+      @"forcedStop": _isInterrupted ? @1 : @0,
     }];
     
     // This will resume the music/audio file that was playing before the recording started
