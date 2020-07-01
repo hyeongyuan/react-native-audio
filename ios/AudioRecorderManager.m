@@ -73,7 +73,7 @@ RCT_EXPORT_MODULE();
           float _currentPeakMetering = [_audioRecorder peakPowerForChannel:0];
           [body setObject:[NSNumber numberWithFloat:_currentPeakMetering] forKey:@"currentPeakMetering"];
       }
-      [self sendEventWithName:AudioRecorderEventProgress body:body];
+      [self.bridge.eventDispatcher sendAppEventWithName:AudioRecorderEventProgress body:body];
 
     _prevProgressUpdateTime = [NSDate date];
   }
@@ -81,7 +81,7 @@ RCT_EXPORT_MODULE();
 
 - (void)sendRecordingStatus {
   // TODO: Add and send recording pause status
-  [self sendEventWithName:AudioRecorderEventStatus body:@{
+  [self.bridge.eventDispatcher sendAppEventWithName:AudioRecorderEventStatus body:@{
       @"isRecording":[NSNumber numberWithBool:_audioRecorder.isRecording]
   }];
 }
@@ -125,7 +125,7 @@ RCT_EXPORT_MODULE();
     } else {
       _duration = _audioPlayer.duration;
     }
-    [self sendEventWithName:AudioRecorderEventFinished body:@{
+    [self.bridge.eventDispatcher sendAppEventWithName:AudioRecorderEventFinished body:@{
       @"base64":base64,
       @"duration":@(_duration),
       @"status": flag ? @"OK" : @"ERROR",
