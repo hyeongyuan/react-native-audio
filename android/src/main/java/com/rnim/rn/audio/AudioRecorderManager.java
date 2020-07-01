@@ -85,6 +85,8 @@ class AudioRecorderManager extends ReactContextBaseJavaModule implements Lifecyc
   private Method pauseMethod = null;
   private Method resumeMethod = null;
 
+  private boolean isForced = false;
+
   BroadcastReceiver receiver;
 
 
@@ -280,6 +282,7 @@ class AudioRecorderManager extends ReactContextBaseJavaModule implements Lifecyc
     stopWatch.start();
     isRecording = true;
     isPaused = false;
+    isForced = false;
     startTimer();
     broadcastRecordStatus();
     promise.resolve(currentOutputFile);
@@ -345,7 +348,8 @@ class AudioRecorderManager extends ReactContextBaseJavaModule implements Lifecyc
 
     WritableArray nativeArray = Arguments.fromList(timestamps);
     result.putArray("timestamps", nativeArray);
-    
+    result.putBoolean("forcedStop", isForced);
+
     sendEvent("recordingFinished", result);
     unregisterBatteryListener();
   }
@@ -534,6 +538,7 @@ class AudioRecorderManager extends ReactContextBaseJavaModule implements Lifecyc
     stopTimer();
     isRecording = false;
     isPaused = false;
+    isForced = true;
 
     try {
       saveTimestamp();
@@ -582,6 +587,7 @@ class AudioRecorderManager extends ReactContextBaseJavaModule implements Lifecyc
 
     WritableArray nativeArray = Arguments.fromList(timestamps);
     result.putArray("timestamps", nativeArray);
+    result.putBoolean("forcedStop", isForced);
     
     sendEvent("recordingFinished", result);
     unregisterBatteryListener();

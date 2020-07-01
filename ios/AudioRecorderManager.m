@@ -38,6 +38,8 @@ NSString *const AudioRecorderEventStatus = @"recordingStatus";
   BOOL _includeBase64;
 
   NSMutableArray *_timestamps;
+
+  BOOL _isInterrupted;
 }
 
 @synthesize bridge = _bridge;
@@ -130,6 +132,7 @@ RCT_EXPORT_MODULE();
       @"audioFileURL": [_audioFileURL absoluteString],
       @"audioFileSize": @(audioFileSize),
       @"timestamps": [NSArray arrayWithArray:_timestamps]
+      @"forcedStop": _isInterrupted
     }];
     
     // This will resume the music/audio file that was playing before the recording started
@@ -165,6 +168,7 @@ RCT_EXPORT_MODULE();
       switch (type) {
         case AVAudioSessionInterruptionTypeBegan:
           NSLog(@"Begin interruption");
+          _isInterrupted = YES;
           [self forceStopRecording];
           break;
         case AVAudioSessionInterruptionTypeEnded:
@@ -187,6 +191,7 @@ RCT_EXPORT_METHOD(prepareRecordingAtPath:(NSString *)path sampleRate:(float)samp
   _audioSampleRate = [NSNumber numberWithFloat:44100.0];
   _meteringEnabled = NO;
   _includeBase64 = NO;
+  _isInterrupted = NO;
 
   // Set audio quality from options
   if (quality != nil) {
