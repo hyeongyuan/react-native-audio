@@ -128,16 +128,32 @@ class AudioRecorderManager extends ReactContextBaseJavaModule implements Lifecyc
   @Override
   public void onHostResume() {
     // Log.d(TAG, "onHostResume");
+    if (recorder == null) {
+      return;
+    }
+    if (!isRecording) {
+      stopService();
+    }
   }
 
   @Override
   public void onHostPause() {
     // Log.d(TAG, "onHostPause");
+    if (recorder == null) {
+      return;
+    }
+
+    if (!isRecording && !isPaused) {
+      startService("회의 전", "회의 시작 전입니다.");
+    }
   }
 
   @Override
   public void onHostDestroy() {
     // Log.d(TAG, "onHostDestroy");
+    stopService();
+    unregisterBatteryListener();
+
     if (!isRecording || recorder == null){
       return;
     }
@@ -151,14 +167,12 @@ class AudioRecorderManager extends ReactContextBaseJavaModule implements Lifecyc
       recorder.stop();
       recorder.release();
       stopWatch.stop();
-      stopService();
     } catch (final RuntimeException e) {
       // https://developer.android.com/reference/android/media/MediaRecorder.html#stop()
       Log.e("RUNTIME_EXCEPTION", "No valid audio data received. You may be using a device that can't record audio.");
     } finally {
       recorder = null;
     }
-    unregisterBatteryListener();
   }
 
   @ReactMethod
