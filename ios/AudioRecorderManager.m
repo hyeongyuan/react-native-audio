@@ -160,8 +160,10 @@ RCT_EXPORT_MODULE();
       switch (type) {
         case AVAudioSessionInterruptionTypeBegan:
           NSLog(@"Begin interruption");
-          _isInterrupted = YES;
-          [self forceStopRecording];
+          if (_audioRecorder && _audioRecorder.isRecording) {
+            _isInterrupted = YES;
+            [self forceStopRecording];
+          }
           break;
         case AVAudioSessionInterruptionTypeEnded:
           NSLog(@"End interruption");
