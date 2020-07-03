@@ -126,6 +126,11 @@ var AudioRecorder = {
     return AudioRecorderManager.createNotificationChannel(channelConfig);
   },
   ////////////////////////////////////////////////////////////////////////////////////////////////
+  clear: () => {
+    if (Platform.OS === "android") {
+      AudioRecorderManager.clear();
+    }
+  },
 };
 
 let AudioUtils = {};

@@ -176,6 +176,16 @@ class AudioRecorderManager extends ReactContextBaseJavaModule implements Lifecyc
   }
 
   @ReactMethod
+  public void clear() {
+    if (isRecording) {
+      return;
+    }
+    if (recorder != null) {
+      recorder = null;
+    }
+  }
+
+  @ReactMethod
   public void checkAuthorizationStatus(Promise promise) {
     int permissionCheck = ContextCompat.checkSelfPermission(getCurrentActivity(),
             Manifest.permission.RECORD_AUDIO);
