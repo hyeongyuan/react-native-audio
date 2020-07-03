@@ -39,7 +39,7 @@ NSString *const AudioRecorderEventStatus = @"recordingStatus";
 
   NSMutableArray *_timestamps;
 
-  BOOL _isInterrupted;
+  BOOL _hasInterruptionStop;
 }
 
 @synthesize bridge = _bridge;
@@ -124,7 +124,7 @@ RCT_EXPORT_MODULE();
       @"audioFileURL": [_audioFileURL absoluteString],
       @"audioFileSize": @(audioFileSize),
       @"timestamps": [NSArray arrayWithArray:_timestamps],
-      @"forcedStop": _isInterrupted ? @1 : @0,
+      @"forcedStop": _hasInterruptionStop ? @1 : @0,
     }];
     
     // This will resume the music/audio file that was playing before the recording started
@@ -155,18 +155,33 @@ RCT_EXPORT_MODULE();
 
 - (void)audioInterruptionHandler:(NSNotification *)notification {
       NSDictionary *info = notification.userInfo;
-      AVAudioSessionInterruptionType type = [info[AVAudioSessionInterruptionTypeKey] unsignedIntegerValue];
+      // Interrupt info
+      NSNumber* interruptionType = [[notification userInfo] objectForKey: AVAudioSessionInterruptionTypeKey];
+      NSNumber* interruptionOption = [[notification userInfo] objectForKey: AVAudioSessionInterruptionOptionKey];
 
-      switch (type) {
+      switch (interruptionType.unsignedIntegerValue) {
         case AVAudioSessionInterruptionTypeBegan:
           NSLog(@"Begin interruption");
           if (_audioRecorder && _audioRecorder.isRecording) {
-            _isInterrupted = YES;
-            [self forceStopRecording];
+            // [self forceStopRecording];
+            [_audioRecorder pause];
+            _hasInterruptionStop = YES;
           }
           break;
+
         case AVAudioSessionInterruptionTypeEnded:
           NSLog(@"End interruption");
+
+          switch (interruptionOption.unsignedIntegerValue) {
+            case AVAudioSessionInterruptionOptionShouldResume:
+              if (_hasInterruptionStop && _audioRecorder && !_audioRecorder.isRecording) {
+                NSLog(@"Resume Recording");
+                [_audioRecorder record];
+                _hasInterruptionStop = NO;
+              }
+              break;
+              
+          }          
           break;
       }
 }
@@ -185,7 +200,7 @@ RCT_EXPORT_METHOD(prepareRecordingAtPath:(NSString *)path sampleRate:(float)samp
   _audioSampleRate = [NSNumber numberWithFloat:44100.0];
   _meteringEnabled = NO;
   _includeBase64 = NO;
-  _isInterrupted = NO;
+  _hasInterruptionStop = NO;
 
   // Set audio quality from options
   if (quality != nil) {
@@ -272,7 +287,11 @@ RCT_EXPORT_METHOD(prepareRecordingAtPath:(NSString *)path sampleRate:(float)samp
       [_recordSession setCategory:AVAudioSessionCategoryMultiRoute error:nil];
   }
 
-  [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(audioInterruptionHandler:) name:AVAudioSessionInterruptionNotification object:nil];
+  NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
+  [center addObserver:self 
+            selector:@selector(audioInterruptionHandler:) 
+            name:AVAudioSessionInterruptionNotification 
+            object:_recordSession];
 
   _audioRecorder = [[AVAudioRecorder alloc]
                 initWithURL:_audioFileURL
